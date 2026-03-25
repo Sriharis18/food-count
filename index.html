@@ -647,11 +647,13 @@
 
             // Route rendering based on Role
             const renderDashboard = () => {
+                if (!currentUser) return null;
+
                 switch(currentUser.role) {
                     case 'student': return <StudentDashboard user={currentUser} onLogout={handleLogout} />;
                     case 'mess': return <MessDashboard user={currentUser} onLogout={handleLogout} />;
                     case 'admin': return <AdminDashboard user={currentUser} onLogout={handleLogout} />;
-                    default: return <Login onLogin={handleLogin} />;
+                    default: return <div className="p-8 text-center text-red-500 text-xl">Error: Unknown Role "{currentUser.role}"</div>;
                 }
             };
 
