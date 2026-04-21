@@ -17,7 +17,9 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.static(__dirname)); // Serve frontend files (index.html, app.js, etc.)
+// Serve static files from root in Vercel is handled by Vercel automatically
+// But we keep this for local compatibility if needed
+app.use(express.static(__dirname + '/../')); 
 
 // Database Pool
 const pool = mysql.createPool({
@@ -146,7 +148,7 @@ app.get('/api/admin/settings', async (req, res) => {
             
             res.json({ startTime: s.startTime || '09:00', cutoff, holiday });
         } else {
-            res.json({ startTime: '09:00', cutoff: '23:59', holiday: (s.is_holiday === 1) });
+            res.json({ startTime: '09:00', cutoff: '23:59', holiday: false });
         }
     } catch (err) {
         console.error(err);
