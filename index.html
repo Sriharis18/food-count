@@ -1,682 +1,1970 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Mess - React Portal</title>
-    
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Tailwind CSS for Modern UI -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <title>Smart Mess | Food Count System</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="image/icon-192.png">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"
+        rel="stylesheet" />
+
+    <!-- SheetJS for Excel Processing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        /* Custom Styles & Animations */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
-        
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
-        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-
-        /* Loader */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius: 0.75rem;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Utilities */
+        .hidden {
+            display: none !important;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .h-full {
+            height: 100%;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .p-4 {
+            padding: 1rem;
+        }
+
+        .p-6 {
+            padding: 1.5rem;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        /* Components */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            outline: none;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            background: #fff;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Landing Page Specifics */
+        .landing-wrapper {
+            background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url('image/clg.png') no-repeat center center/cover;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            color: white;
+        }
+
+        .landing-content {
+            text-align: center;
+            padding: 3rem;
+            border-radius: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform: translateY(30px);
+            opacity: 0;
+            max-width: 600px;
+            width: 90%;
+            margin: auto;
+        }
+
+        .landing-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .landing-subtitle {
+            font-size: 1.1rem;
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .btn-landing {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            font-size: 1.1rem;
+            padding: 1rem 2.5rem;
+            border-radius: 999px;
+            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .btn-landing:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #312e81 100%);
+        }
+
+        .floating-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+            display: inline-block;
+            color: #fff;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .college-name-banner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            padding: 1.1rem 1rem;
+            font-size: 1.4rem;
+            font-weight: 900;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: #fde68a;
+            background: rgba(136, 135, 135, 0.125);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            /* border-bottom: 1px solid rgba(253,230,138,0.2); */
+            z-index: 10;
+            text-shadow:
+                0 0 6px #fde68a,
+                0 0 14px #f59e0b,
+                0 0 28px #f59e0b,
+                0 0 50px #d97706;
+            animation: glowPulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+
+            0%,
+            100% {
+                text-shadow:
+                    0 0 6px #fde68a,
+                    0 0 14px #f59e0b,
+                    0 0 28px #f59e0b,
+                    0 0 50px #d97706;
+            }
+
+            50% {
+                text-shadow:
+                    0 0 10px #fff,
+                    0 0 22px #fde68a,
+                    0 0 44px #f59e0b,
+                    0 0 80px #d97706,
+                    0 0 100px #b45309;
+            }
+        }
+
+        /* Login Specifics */
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 1rem;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem;
+            position: relative;
+        }
+
+        .login-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .login-close-btn:hover {
+            background: #f1f5f9;
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            border: 1px solid #fecaca;
+        }
+
+        .warn-msg {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            border: 1px solid #fde68a;
+        }
+
+        /* Navigation */
+        header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            padding: 1.5rem;
+        }
+
+        .view-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-bottom: 3rem;
+        }
+
+        .view-container>* {
+            animation: fadeInUp 0.5s ease-out forwards;
+            animation-fill-mode: both;
+        }
+
+        .view-container>*:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .view-container>*:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .view-container>*:nth-child(3) {
+            animation-delay: 0.25s;
+        }
+
+        .view-container>*:nth-child(4) {
+            animation-delay: 0.35s;
+        }
+
+        /* Toggles */
+        .toggle-wrapper {
+            display: flex;
+            background: #e2e8f0;
+            padding: 0.35rem;
+            border-radius: 999px;
+            margin-bottom: 1.5rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .toggle-opt {
+            flex: 1;
+            text-align: center;
+            padding: 0.75rem;
+            cursor: pointer;
+            border-radius: 999px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .toggle-opt.active-yes {
+            background: var(--success);
+            color: white;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .toggle-opt.active-no {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        /* Tables */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th {
+            text-align: left;
+            padding: 1.25rem 1rem;
+            background: #f8fafc;
+            border-bottom: 2px solid var(--border);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--primary-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover td {
+            background: #f1f5f9;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-yes {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-no {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: 1rem;
+            color: white;
+            border: none;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 120px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
+            pointer-events: none;
+        }
+
+        .stat-card:nth-child(1) {
+            background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        .stat-card:nth-child(2) {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+        }
+
+        .stat-card:nth-child(3) {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.4);
+        }
+
+        .stat-card:nth-child(4) {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.4);
+        }
+
+        .stat-card .stat-num {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.25rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-card .text-muted {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* NEW PREMIUM STYLES */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .gradient-indigo {
+            background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+        }
+
+        .gradient-emerald {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .gradient-amber {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .gradient-rose {
+            background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+        }
+
+        .shadow-premium {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .hover-lift {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .icon-box {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            background: var(--bg-body);
+            color: var(--primary);
+        }
+
+        /* WhatsApp FAB */
+        .whatsapp-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(37, 211, 102, 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: none;
+            outline: none;
+        }
+
+        .whatsapp-fab:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 15px 30px rgba(37, 211, 102, 0.5);
+        }
+
+        .whatsapp-fab:active {
+            transform: scale(0.9);
+        }
+
+        .whatsapp-fab span,
+        .whatsapp-fab img {
+            width: 35px;
+            height: 35px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        /* PWA Guide Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Custom Modal System */
+        .c-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .c-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .c-modal {
+            background: white;
+            border-radius: 1.25rem;
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .c-modal-overlay.active .c-modal {
+            transform: scale(1);
+        }
+
+        .c-modal-icon {
+            width: 64px;
+            height: 64px;
+            background: #fff1f2;
+            color: #e11d48;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .c-modal-icon span {
+            font-size: 32px;
+        }
+
+        .c-modal h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+        }
+
+        .c-modal p {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .c-modal-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .c-modal-actions button {
+            flex: 1;
+            padding: 0.875rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-c-cancel {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-c-confirm {
+            background: #e11d48;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.3);
+        }
+
+        /* Toast System */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 4000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid #6366f1;
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-width: 300px;
+            max-width: 450px;
+            transform: translateX(120%);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
+        }
+
+        .toast.active {
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #1e293b;
+        }
+
+        .toast-msg {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.1rem;
+        }
+
+        .toast-success {
+            border-left-color: #10b981;
+        }
+
+        .toast-success .toast-icon {
+            background: #ecfdf5;
+            color: #10b981;
+        }
+
+        .toast-error {
+            border-left-color: #ef4444;
+        }
+
+        .toast-error .toast-icon {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+
+        .toast-info {
+            border-left-color: #3b82f6;
+        }
+
+        .toast-info .toast-icon {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 640px) {
+            #toast-container {
+                bottom: 1rem;
+                left: 1rem;
+                right: 1rem;
+            }
+
+            .toast {
+                min-width: 0;
+                width: 100%;
+            }
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border-radius: 1.5rem;
+            width: 100%;
+            max-width: 500px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .guide-step {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-num {
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .step-content strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: var(--text-main);
+        }
+
+        .step-content p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* --- MOBILE RESPONSIVE STYLES --- */
+        @media (max-width: 768px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
+
+            main {
+                padding: 1rem;
+            }
+
+            .view-container {
+                padding-bottom: 5rem;
+            }
+
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            .brand {
+                font-size: 1.1rem;
+            }
+
+            #header-user-name {
+                display: none;
+            }
+
+            .landing-content {
+                padding: 2rem 1.5rem;
+                width: 95%;
+            }
+
+            .landing-title {
+                font-size: 2.2rem;
+            }
+
+            .college-name-banner {
+                font-size: 1rem;
+                letter-spacing: 0.15em;
+                padding: 0.8rem 0.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .stat-card {
+                min-height: 100px;
+                padding: 1rem;
+            }
+
+            .stat-card .stat-num {
+                font-size: 2rem;
+            }
+
+            .grid.md\:grid-cols-2 {
+                grid-template-columns: 1fr !important;
+            }
+
+            .flex.gap-3,
+            .flex.gap-4 {
+                flex-direction: column;
+            }
+
+            .input-field {
+                font-size: 16px;
+                /* Prevents auto-zoom on iOS */
+            }
+
+            .btn {
+                width: 100%;
+                padding: 0.875rem 1rem;
+            }
+
+            /* Table Mobile Conversions */
+            .table-responsive {
+                border: none;
+                margin: 0 -1rem;
+                /* Full width on mobile */
+            }
+
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+            }
+
+            table {
+                min-width: auto;
+            }
+
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            tr {
+                margin-bottom: 1.25rem;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                background: var(--bg-card);
+                overflow: hidden;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                padding: 0.5rem 0;
+            }
+
+            td {
+                border: none;
+                border-bottom: 1px solid #f8fafc;
+                padding: 0.75rem 1rem;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+                min-height: auto;
+                text-align: left;
+            }
+
+            td:last-child {
+                border-bottom: none;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: var(--text-muted);
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                text-align: left;
+                margin-bottom: 0.15rem;
+                flex-shrink: 0;
+            }
+
+            /* Fix Badge in mobile tables */
+            td .badge {
+                margin-left: 0;
+                margin-top: 0.25rem;
+            }
+
+            /* Align button in mobile table */
+            td button {
+                margin-left: 0;
+                margin-top: 0.5rem;
+                width: auto;
+                min-width: 120px;
+            }
+
+            .whatsapp-fab {
+                width: 50px;
+                height: 50px;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                left: auto;
+            }
+
+            .whatsapp-fab img {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .landing-title {
+                font-size: 1.8rem;
+            }
+
+            .landing-subtitle {
+                font-size: 0.95rem;
+            }
+
+            .login-card {
+                padding: 1.5rem;
+            }
+
+            .modal-card {
+                border-radius: 1rem;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Dedicated Print Styles */
+        @media print {
+            body>*:not(#print-area) {
+                display: none !important;
+            }
+
+            #print-area {
+                display: block !important;
+                background: white !important;
+                color: black !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Reset Table for Print (Overrides mobile blocks) */
+            #print-area table {
+                display: table !important;
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 10px !important;
+            }
+
+            #print-area thead {
+                display: table-header-group !important;
+            }
+
+            #print-area tbody {
+                display: table-row-group !important;
+            }
+
+            #print-area tr {
+                display: table-row !important;
+                page-break-inside: avoid !important;
+            }
+
+            #print-area th,
+            #print-area td {
+                display: table-cell !important;
+                padding: 12px 10px !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                text-align: left !important;
+                vertical-align: middle !important;
+            }
+
+            #print-area th {
+                background: #f8fafc !important;
+                color: #5c59e8 !important;
+                /* Indigo from Image 2 */
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                font-size: 10pt !important;
+                letter-spacing: 0.05em !important;
+                border-bottom: 2px solid #5c59e8 !important;
+            }
+
+            #print-area td {
+                font-size: 10pt !important;
+                color: #1e293b !important;
+            }
+
+            /* Hide mobile labels in print */
+            #print-area td::before {
+                display: none !important;
+            }
+
+            .text-center {
+                text-align: center !important;
+            }
+
+            /* Badges in Print */
+            .badge {
+                display: inline-block !important;
+                padding: 4px 10px !important;
+                border-radius: 99px !important;
+                font-weight: 700 !important;
+                font-size: 8pt !important;
+                min-width: 45px !important;
+                text-align: center !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .badge-yes {
+                background: #dcfce7 !important;
+                color: #166534 !important;
+            }
+
+            .badge-no {
+                background: #fee2e2 !important;
+                color: #991b1b !important;
+            }
+
+            .print-header {
+                text-align: center !important;
+                margin-bottom: 20px !important;
+                padding-bottom: 15px !important;
+                border-bottom: 2px solid #0f172a !important;
+            }
+
+            .print-header h1 {
+                font-size: 22pt !important;
+                margin: 0 0 5px 0 !important;
+                color: #0f172a !important;
+                font-weight: 900 !important;
+            }
+
+            .print-header h2 {
+                font-size: 14pt !important;
+                color: #64748b !important;
+                margin: 0 !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.1em !important;
+            }
+        }
+
+        #print-area {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+    <!-- HEADER -->
+    <header id="app-header" class="hidden">
+        <div class="brand">
+            <span class="material-symbols-rounded">restaurant_menu</span>
+            CBS Smart Mess
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="pwa-install-header" class="btn btn-primary btn-sm" onclick="app.installPWA()">
+                <span class="material-symbols-rounded">download</span> Install
+            </button>
+            <span id="header-user-name" class="font-bold"></span>
+            <button class="btn btn-danger btn-sm" onclick="app.auth.logout()">Logout</button>
+        </div>
+    </header>
 
-        // ==========================================
-        // MOCK BACKEND & DATABASE (Node/Express/SQL Simulation)
-        // ==========================================
-        
-        const DB_KEYS = {
-            USERS: 'smart_mess_users',
-            MENU: 'smart_mess_menu',
-            ATTENDANCE: 'smart_mess_attendance',
-            LOGS: 'smart_mess_logs'
-        };
+    <main id="main-content">
 
-        // Initial Seed Data
-        const SEED_DATA = {
-            users: [
-                { id: 1, name: "Admin User", email: "admin", password: "123", role: "admin" },
-                { id: 2, name: "Mess Manager", email: "mess", password: "123", role: "mess" },
-                { id: 3, name: "John Student", email: "student", password: "123", role: "student", hostel: "Block A" },
-                { id: 4, name: "Jane Doe", email: "jane", password: "123", role: "student", hostel: "Block B" }
-            ],
-            menu: {
-                breakfast: "Idli & Sambar",
-                lunch: "Rice, Dal, Mixed Veg, Curd",
-                dinner: "Chapati, Paneer Butter Masala, Salad"
-            },
-            attendance: {} // Format: "YYYY-MM-DD": { userId: { breakfast: true, lunch: false... } }
-        };
+        <!-- LOGIN VIEW -->
+        <section id="view-login" class="h-full" style="position:relative;">
 
-        // Initialize LocalStorage if empty
-        if (!localStorage.getItem(DB_KEYS.USERS)) {
-            localStorage.setItem(DB_KEYS.USERS, JSON.stringify(SEED_DATA.users));
-            localStorage.setItem(DB_KEYS.MENU, JSON.stringify(SEED_DATA.menu));
-            localStorage.setItem(DB_KEYS.ATTENDANCE, JSON.stringify(SEED_DATA.attendance));
-        }
+            <!-- LANDING PAGE -->
+            <div id="landing-page" class="landing-wrapper flex items-center justify-center">
+                <!-- College Name Banner - outside the card -->
+                <div class="college-name-banner">✦ Chetan Business School ✦</div>
 
-        // --- API Service (Simulating Express Routes) ---
-        const API = {
-            delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
-
-            // POST /api/login
-            login: async (email, password) => {
-                await API.delay(600); // Simulate network latency
-                const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS));
-                const user = users.find(u => u.email === email && u.password === password);
-                if (user) return { success: true, user };
-                return { success: false, message: "Invalid credentials" };
-            },
-
-            // GET /api/menu
-            getMenu: async () => {
-                await API.delay(200);
-                return JSON.parse(localStorage.getItem(DB_KEYS.MENU));
-            },
-
-            // PUT /api/menu (Mess Only)
-            updateMenu: async (newMenu) => {
-                await API.delay(400);
-                localStorage.setItem(DB_KEYS.MENU, JSON.stringify(newMenu));
-                return { success: true };
-            },
-
-            // GET /api/attendance?date=...
-            getAttendance: async (date) => {
-                await API.delay(200);
-                const all = JSON.parse(localStorage.getItem(DB_KEYS.ATTENDANCE));
-                return all[date] || {};
-            },
-
-            // POST /api/attendance (Student Opt-in)
-            markAttendance: async (date, userId, mealType, status) => {
-                await API.delay(300);
-                const all = JSON.parse(localStorage.getItem(DB_KEYS.ATTENDANCE));
-                if (!all[date]) all[date] = {};
-                if (!all[date][userId]) all[date][userId] = {};
-                
-                all[date][userId][mealType] = status;
-                localStorage.setItem(DB_KEYS.ATTENDANCE, JSON.stringify(all));
-                return { success: true };
-            },
-
-            // GET /api/users (Admin Only)
-            getUsers: async () => {
-                await API.delay(300);
-                return JSON.parse(localStorage.getItem(DB_KEYS.USERS));
-            },
-
-            // GET /api/export (Admin Only)
-            exportData: async () => {
-                await API.delay(500);
-                const users = JSON.parse(localStorage.getItem(DB_KEYS.USERS));
-                const att = JSON.parse(localStorage.getItem(DB_KEYS.ATTENDANCE));
-                return { users, attendance: att };
-            }
-        };
-
-        // ==========================================
-        // REACT COMPONENTS
-        // ==========================================
-
-        // --- UI Components ---
-        const Toast = ({ message, type, onClose }) => {
-            useEffect(() => {
-                const timer = setTimeout(onClose, 3000);
-                return () => clearTimeout(timer);
-            }, [onClose]);
-
-            const bgClass = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-
-            return (
-                <div className={`fixed top-5 right-5 ${bgClass} text-white px-6 py-3 rounded shadow-lg fade-in z-50`}>
-                    {message}
+                <div class="landing-content">
+                    <span class="material-symbols-rounded floating-icon">restaurant</span>
+                    <h1 class="landing-title">CBS Smart Mess</h1>
+                    <p class="landing-subtitle">Welcome to the future of food management. Delicious, efficient, and
+                        smart. Join us to streamline your daily meals.</p>
+                    <button type="button" class="btn-landing"
+                        onclick="document.getElementById('landing-page').classList.add('hidden'); document.getElementById('login-box').classList.remove('hidden');">
+                        Login <span class="material-symbols-rounded">arrow_forward</span>
+                    </button>
+                    <button id="pwa-install-landing" class="btn-landing mt-4" onclick="app.installPWA()"
+                        style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+                        Install App <span class="material-symbols-rounded">download</span>
+                    </button>
                 </div>
-            );
-        };
-
-        const Button = ({ children, onClick, variant = 'primary', className = '', loading = false, disabled = false }) => {
-            const baseClass = "px-4 py-2 rounded font-medium transition-colors flex items-center justify-center gap-2";
-            const variants = {
-                primary: "bg-blue-600 hover:bg-blue-700 text-white",
-                secondary: "bg-gray-200 hover:bg-gray-300 text-gray-800",
-                danger: "bg-red-500 hover:bg-red-600 text-white",
-                success: "bg-green-600 hover:bg-green-700 text-white"
-            };
-            
-            return (
-                <button 
-                    onClick={onClick} 
-                    disabled={disabled || loading}
-                    className={`${baseClass} ${variants[variant]} ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
-                >
-                    {loading && <div className="loader w-4 h-4 border-2 border-white border-t-transparent"></div>}
-                    {children}
-                </button>
-            );
-        };
-
-        const Card = ({ title, children, className = "" }) => (
-            <div className={`bg-white rounded-xl shadow-sm p-6 border border-gray-100 ${className}`}>
-                {title && <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">{title}</h3>}
-                {children}
             </div>
-        );
 
-        // --- Views ---
+            <!-- LOGIN BOX -->
+            <div id="login-box" class="login-wrapper h-full hidden">
+                <div class="card login-card" style="animation: fadeInUp 0.5s ease-out forwards;">
+                    <button class="login-close-btn"
+                        onclick="document.getElementById('login-box').classList.add('hidden'); document.getElementById('landing-page').classList.remove('hidden');"
+                        title="Back to Welcome Page">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                    <div class="text-center mb-4">
+                        <h2 class="font-bold" style="font-size: 1.5rem; margin-bottom: 0.5rem;">CBS Smart Mess</h2>
+                        <p class="text-muted text-sm">Sign in to continue</p>
+                    </div>
 
-        const Login = ({ onLogin }) => {
-            const [email, setEmail] = useState("student");
-            const [password, setPassword] = useState("123");
-            const [loading, setLoading] = useState(false);
-            const [error, setError] = useState("");
+                    <div id="storage-warning" class="warn-msg hidden">
+                        <strong>Warning:</strong> LocalStorage is blocked (Sandbox Mode). Data will not save after
+                        refresh.
+                    </div>
 
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setLoading(true);
-                setError("");
-                
-                const res = await API.login(email, password);
-                
-                if (res.success) {
-                    onLogin(res.user);
-                } else {
-                    setError(res.message);
-                }
-                setLoading(false);
-            };
+                    <div id="login-error" class="error-msg hidden"></div>
 
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 p-4">
-                    <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
-                        <div className="text-center mb-8">
-                            <i className="fas fa-utensils text-5xl text-blue-500 mb-4"></i>
-                            <h1 className="text-3xl font-bold text-gray-800">Smart Mess</h1>
-                            <p className="text-gray-500">Login to your portal</p>
+                    <form id="login-form" onsubmit="app.auth.login(event)">
+                        <div class="input-group">
+                            <label>College ID</label>
+                            <input type="text" id="login-id" class="input-field" placeholder="Enter ID" required>
                         </div>
-                        
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <div class="input-group">
+                            <label>Password</label>
+                            <input type="password" id="login-pass" class="input-field" placeholder="Enter Password"
+                                required>
+                        </div>
+                        <button type="submit" id="btn-login-submit" class="btn btn-primary w-full">
+                            <span>Login</span>
+                        </button>
+                    </form>
+
+                    <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+                        <p class="text-xs text-muted italic">Secure student access portal</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STUDENT DASHBOARD -->
+        <section id="view-student" class="view-container hidden">
+            <div class="card p-6 mb-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-bold">Tomorrow's Selection</h2>
+                    <span id="student-date" class="text-sm text-muted"></span>
+                </div>
+
+                <div id="student-form">
+                    <label class="font-bold text-sm mb-2 block">Breakfast</label>
+                    <div class="toggle-wrapper">
+                        <div class="toggle-opt" onclick="app.student.set('breakfast', true)">Yes</div>
+                        <div class="toggle-opt" onclick="app.student.set('breakfast', false)">No</div>
+                    </div>
+
+                    <label class="font-bold text-sm mb-2 block">Lunch</label>
+                    <div class="toggle-wrapper">
+                        <div class="toggle-opt" onclick="app.student.set('lunch', true)">Yes</div>
+                        <div class="toggle-opt" onclick="app.student.set('lunch', false)">No</div>
+                    </div>
+
+                    <button id="btn-submit-count" class="btn btn-primary w-full" onclick="app.student.submit()"
+                        disabled>Submit Attendance</button>
+                </div>
+
+                <div id="student-locked" class="hidden text-center p-6">
+                    <div class="mb-6">
+                        <div class="icon-box mx-auto mb-4"
+                            style="width: 60px; height: 60px; background: #ecfdf5; color: #10b981; border-radius: 50%;">
+                            <span class="material-symbols-rounded" style="font-size: 32px;">check_circle</span>
+                        </div>
+                        <h3 id="student-status-title" class="font-bold text-xl mb-2">Submitted</h3>
+                        <p id="student-status-msg" class="text-sm text-muted">Your today's choice is over.</p>
+                    </div>
+
+                    <div id="student-saved-data"
+                        class="bg-slate-50 p-4 rounded-xl text-left border border-slate-100 mb-6"></div>
+
+                    <div id="next-opening-container" class="p-5 bg-indigo-50 rounded-2xl border border-indigo-100">
+                        <p class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-3">Next Window Opens In
+                        </p>
+                        <div id="opening-countdown" class="text-3xl font-black text-indigo-900 tabular-nums">00:00:00
+                        </div>
+                        <p class="text-xs text-indigo-400 mt-2">Selection for the day after tomorrow</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADMIN DASHBOARD -->
+        <section id="view-admin" class="view-container hidden">
+            <!-- Stats Section -->
+            <div class="stats-grid mb-6">
+                <div class="card stat-card gradient-indigo shadow-premium hover-lift">
+                    <div class="flex items-center justify-between w-full p-4">
+                        <div class="text-left">
+                            <div class="stat-num" id="adm-total-students">0</div>
+                            <div class="text-xs text-muted font-bold uppercase tracking-wider">Total Students</div>
+                        </div>
+                        <span class="material-symbols-rounded" style="font-size: 2.5rem; opacity: 0.3;">group</span>
+                    </div>
+                </div>
+                <div class="card stat-card gradient-emerald shadow-premium hover-lift">
+                    <div class="flex items-center justify-between w-full p-4">
+                        <div class="text-left">
+                            <div class="stat-num" id="adm-breakfast">0</div>
+                            <div class="text-xs text-muted font-bold uppercase tracking-wider">Breakfast Tomorrow</div>
+                        </div>
+                        <span class="material-symbols-rounded"
+                            style="font-size: 2.5rem; opacity: 0.3;">breakfast_dining</span>
+                    </div>
+                </div>
+                <div class="card stat-card gradient-amber shadow-premium hover-lift">
+                    <div class="flex items-center justify-between w-full p-4">
+                        <div class="text-left">
+                            <div class="stat-num" id="adm-lunch">0</div>
+                            <div class="text-xs text-muted font-bold uppercase tracking-wider">Lunch Tomorrow</div>
+                        </div>
+                        <span class="material-symbols-rounded"
+                            style="font-size: 2.5rem; opacity: 0.3;">lunch_dining</span>
+                    </div>
+                </div>
+                <div class="card stat-card gradient-violet shadow-premium hover-lift">
+                    <div class="flex items-center justify-between w-full p-4">
+                        <div class="text-left">
+                            <div class="stat-num" id="adm-guests">0 / 0</div>
+                            <div class="text-xs text-muted font-bold uppercase tracking-wider">Guests (BF / LU)</div>
+                        </div>
+                        <span class="material-symbols-rounded"
+                            style="font-size: 2.5rem; opacity: 0.3;">person_add</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Management Tools Section -->
+            <div class="grid md:grid-cols-2 gap-6 mb-8"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                <!-- System Config -->
+                <div class="card p-6 shadow-premium">
+                    <div class="section-header">
+                        <div class="icon-box"><span class="material-symbols-rounded">settings</span></div>
+                        <h3>System Settings</h3>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <div class="input-group">
+                            <label>Selection Start Time</label>
+                            <input type="time" id="adm-start" class="input-field" onchange="app.admin.saveSettings()">
+                        </div>
+                        <div class="input-group">
+                            <label>Cutoff Time</label>
+                            <input type="time" id="adm-cutoff" class="input-field" onchange="app.admin.saveSettings()">
+                        </div>
+                        <label
+                            class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-dashed border-slate-300 cursor-pointer hover:bg-slate-100 transition-colors"
+                            style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 0.5rem; border: 1px dashed #cbd5e1; cursor: pointer;">
+                            <input type="checkbox" id="adm-holiday" onchange="app.admin.saveSettings()"
+                                style="width:1.2rem; height:1.2rem;">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email / Username</label>
-                                <input 
-                                    type="text" 
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                    placeholder="student, admin, or mess"
-                                />
+                                <span class="font-bold text-sm block">Mark as Holiday</span>
+                                <span class="text-xs text-muted">Disables student submissions for tomorrow.</span>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                <input 
-                                    type="password" 
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                    placeholder="123"
-                                />
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Guest Management -->
+                <div class="card p-6 shadow-premium">
+                    <div class="section-header">
+                        <div class="icon-box" style="background:#8b5cf6;"><span
+                                class="material-symbols-rounded">group_add</span></div>
+                        <h3>Guest Food Count</h3>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <p class="text-xs text-muted mb-2">Add extra counts for guests or staff. These are added to the
+                            final mess totals.</p>
+                        <div class="grid grid-cols-2 gap-4"
+                            style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                            <div class="input-group">
+                                <label>Breakfast Guests</label>
+                                <input type="number" id="new-guest-bf" class="input-field" placeholder="0" min="0">
                             </div>
-                            
-                            {error && <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">{error}</div>}
-                            
-                            <Button loading={loading} className="w-full py-3 text-lg">
-                                Login
-                            </Button>
-                        </form>
-
-                        <div className="mt-6 text-xs text-gray-400 text-center">
-                            <p>Demo Credentials:</p>
-                            <p>Student: <b>student / 123</b></p>
-                            <p>Mess: <b>mess / 123</b></p>
-                            <p>Admin: <b>admin / 123</b></p>
+                            <div class="input-group">
+                                <label>Lunch Guests</label>
+                                <input type="number" id="new-guest-lu" class="input-field" placeholder="0" min="0">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary mt-2" onclick="app.admin.saveGuests()">
+                            <span class="material-symbols-rounded">check_circle</span> Update Guest Counts
+                        </button>
+                        <div class="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-3">
+                            <span class="material-symbols-rounded text-indigo-500">info</span>
+                            <span class="text-xs text-slate-500">Guest counts are saved automatically.</span>
                         </div>
                     </div>
                 </div>
-            );
-        };
 
-        const StudentDashboard = ({ user, onLogout }) => {
-            const [menu, setMenu] = useState({});
-            const [todayAttendance, setTodayAttendance] = useState({});
-            const [loading, setLoading] = useState(true);
-            const [toast, setToast] = useState(null);
-
-            const today = new Date().toISOString().split('T')[0];
-
-            useEffect(() => {
-                loadData();
-            }, []);
-
-            const loadData = async () => {
-                const [mData, aData] = await Promise.all([API.getMenu(), API.getAttendance(today)]);
-                setMenu(mData);
-                setTodayAttendance(aData[user.id] || {});
-                setLoading(false);
-            };
-
-            const handleMealToggle = async (mealType) => {
-                const currentStatus = !!todayAttendance[mealType];
-                const newStatus = !currentStatus;
-                
-                // Optimistic UI update
-                setTodayAttendance(prev => ({ ...prev, [mealType]: newStatus }));
-                
-                const res = await API.markAttendance(today, user.id, mealType, newStatus);
-                
-                if (res.success) {
-                    setToast({ message: `Marked ${mealType} as ${newStatus ? 'Opted In' : 'Opted Out'}`, type: 'success' });
-                } else {
-                    // Revert on failure
-                    setToast({ message: "Failed to update", type: 'error' });
-                    setTodayAttendance(prev => ({ ...prev, [mealType]: currentStatus }));
-                }
-            };
-
-            if (loading) return <div className="flex justify-center items-center h-screen"><div className="loader"></div></div>;
-
-            return (
-                <div className="max-w-4xl mx-auto p-6 space-y-6 fade-in">
-                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-                    
-                    <header className="flex justify-between items-center mb-8">
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-800">Hello, {user.name} 👋</h2>
-                            <p className="text-gray-500">Manage your meal plan for today</p>
-                        </div>
-                        <Button variant="secondary" onClick={onLogout}><i className="fas fa-sign-out-alt"></i> Logout</Button>
-                    </header>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Breakfast Card */}
-                        <MealCard 
-                            title="Breakfast" 
-                            time="07:00 AM - 09:00 AM"
-                            icon="fa-mug-hot"
-                            food={menu.breakfast}
-                            opted={todayAttendance.breakfast}
-                            onToggle={() => handleMealToggle('breakfast')}
-                        />
-                        {/* Lunch Card */}
-                        <MealCard 
-                            title="Lunch" 
-                            time="12:00 PM - 02:00 PM"
-                            icon="fa-hamburger"
-                            food={menu.lunch}
-                            opted={todayAttendance.lunch}
-                            onToggle={() => handleMealToggle('lunch')}
-                        />
-                        {/* Dinner Card */}
-                        <MealCard 
-                            title="Dinner" 
-                            time="07:30 PM - 09:30 PM"
-                            icon="fa-drumstick-bite"
-                            food={menu.dinner}
-                            opted={todayAttendance.dinner}
-                            onToggle={() => handleMealToggle('dinner')}
-                        />
+                <!-- Quick Add Student -->
+                <div class="card p-6 shadow-premium">
+                    <div class="section-header">
+                        <div class="icon-box" style="color:var(--success);"><span
+                                class="material-symbols-rounded">person_add</span></div>
+                        <h3>Quick Add Student</h3>
                     </div>
-
-                    <Card title="Feedback">
-                        <textarea className="w-full border rounded-lg p-3 h-24" placeholder="Any suggestions for the menu?"></textarea>
-                        <div className="mt-2 text-right">
-                            <Button className="text-sm">Submit Feedback</Button>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex gap-3">
+                            <input type="text" id="new-stu-name" placeholder="Full Name" class="input-field">
+                            <input type="text" id="new-stu-id" placeholder="College ID" class="input-field">
                         </div>
-                    </Card>
-                </div>
-            );
-        };
+                        <div class="flex gap-3">
+                            <select id="new-stu-course" class="input-field">
+                                <option value="">Select Course</option>
+                                <option value="MCA 1ST YEAR">MCA 1ST YEAR</option>
+                                <option value="MCA 2ND YEAR">MCA 2ND YEAR</option>
+                                <option value="MBA 1ST YEAR">MBA 1ST YEAR</option>
+                                <option value="MBA 2ND YEAR">MBA 2ND YEAR</option>
+                            </select>
+                            <select id="new-stu-batch" class="input-field">
+                                <option value="">Select Batch</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-3">
+                            <input type="password" id="new-stu-pass" placeholder="Password" class="input-field">
+                            <button class="btn btn-primary w-full" onclick="app.admin.addStudent()">Register
+                                Student</button>
+                        </div>
 
-        const MealCard = ({ title, time, icon, food, opted, onToggle }) => (
-            <Card className={`card-hover relative overflow-hidden ${opted ? 'border-green-500 ring-1 ring-green-500' : ''}`}>
-                <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-full ${opted ? 'bg-green-100' : 'bg-gray-100'} flex items-start justify-end p-2`}>
-                    <i className={`fas ${opted ? 'fa-check-circle text-green-500' : 'fa-circle text-gray-300'} text-2xl`}></i>
-                </div>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${opted ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-600'}`}>
-                        <i className={`fas ${icon}`}></i>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-gray-800">{title}</h3>
-                        <p className="text-xs text-gray-500">{time}</p>
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-xs font-bold text-slate-500 uppercase mb-3">Or Bulk Add via Excel</p>
+                            <div class="flex gap-3">
+                                <button class="btn btn-success w-full"
+                                    onclick="document.getElementById('excel-upload').click()">
+                                    <span class="material-symbols-rounded">upload_file</span> Upload Excel
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="app.admin.downloadTemplate()"
+                                    style="background:rgba(79, 70, 229, 0.1); color:var(--primary); padding: 0.5rem;">
+                                    <span class="material-symbols-rounded">download</span> Template
+                                </button>
+                            </div>
+                            <input type="file" id="excel-upload" class="hidden" accept=".xlsx, .xls"
+                                onchange="app.admin.uploadExcel(event)">
+                        </div>
+
+                        <p class="text-xs text-muted italic text-center mt-3">Registration is immediate and allows
+                            instant login.</p>
                     </div>
                 </div>
-                <p className="text-gray-600 text-sm mb-4 min-h-[40px]">{food || "No menu set"}</p>
-                <Button 
-                    onClick={onToggle} 
-                    variant={opted ? "secondary" : "primary"} 
-                    className="w-full"
-                >
-                    {opted ? "Opt Out" : "Opt In"}
-                </Button>
-            </Card>
-        );
+            </div>
 
-        const MessDashboard = ({ user, onLogout }) => {
-            const [menu, setMenu] = useState({});
-            const [stats, setStats] = useState({});
-            const [editing, setEditing] = useState(false);
-            const [tempMenu, setTempMenu] = useState({});
-            const [loading, setLoading] = useState(true);
-            const [toast, setToast] = useState(null);
-            const today = new Date().toISOString().split('T')[0];
-
-            useEffect(() => {
-                fetchData();
-            }, []);
-
-            const fetchData = async () => {
-                const [m, attData] = await Promise.all([API.getMenu(), API.getAttendance(today)]);
-                setMenu(m);
-                setTempMenu(m);
-                
-                // Calculate Stats
-                const counts = { breakfast: 0, lunch: 0, dinner: 0, totalStudents: 0 };
-                Object.values(attData).forEach(studentRec => {
-                    if(studentRec.breakfast) counts.breakfast++;
-                    if(studentRec.lunch) counts.lunch++;
-                    if(studentRec.dinner) counts.dinner++;
-                });
-                // In a real app, we'd fetch total students from DB, here we mock a number
-                counts.totalStudents = 50; 
-                setStats(counts);
-                setLoading(false);
-            };
-
-            const handleSave = async () => {
-                await API.updateMenu(tempMenu);
-                setMenu(tempMenu);
-                setEditing(false);
-                setToast({ message: "Menu updated successfully", type: "success" });
-            };
-
-            if (loading) return <div className="flex justify-center items-center h-screen"><div className="loader"></div></div>;
-
-            return (
-                <div className="max-w-6xl mx-auto p-6 space-y-6 fade-in">
-                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-                    
-                    <header className="flex justify-between items-center">
-                        <h2 className="text-2xl font-bold text-gray-800">Mess Manager Portal</h2>
-                        <div className="flex gap-2">
-                             <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm self-center">Mess Staff</span>
-                            <Button variant="secondary" onClick={onLogout}>Logout</Button>
+            <!-- Student Directory Section -->
+            <div class="card shadow-premium mb-8 overflow-hidden">
+                <div class="p-6 bg-slate-50 border-b border-slate-200">
+                    <div class="flex justify-between items-center mb-6"
+                        style="flex-wrap:wrap; gap:1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="flex items-center gap-3" style="display: flex; align-items: center; gap:0.75rem;">
+                            <div class="icon-box" style="background:var(--primary); color:white;"><span
+                                    class="material-symbols-rounded">import_contacts</span></div>
+                            <h3 class="font-bold m-0" style="margin:0;">Student Directory</h3>
                         </div>
-                    </header>
+                        <span id="student-count-badge" class="badge badge-yes" style="padding: 0.5rem 1rem;"></span>
+                    </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Menu Management */}
-                        <div className="lg:col-span-2 space-y-6">
-                            <Card 
-                                title="Today's Menu" 
-                                extra={
-                                    <Button variant={editing ? "success" : "primary"} onClick={() => editing ? handleSave() : setEditing(true)} className="text-sm">
-                                        {editing ? "Save Changes" : "Edit Menu"}
-                                    </Button>
-                                }
-                            >
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {['breakfast', 'lunch', 'dinner'].map(meal => (
-                                        <div key={meal}>
-                                            <label className="block text-sm font-semibold text-gray-600 capitalize mb-1">{meal}</label>
-                                            {editing ? (
-                                                <input 
-                                                    type="text" 
-                                                    value={tempMenu[meal]} 
-                                                    onChange={(e) => setTempMenu({...tempMenu, [meal]: e.target.value})}
-                                                    className="w-full border rounded p-2 text-sm"
-                                                />
-                                            ) : (
-                                                <div className="p-3 bg-gray-50 rounded border text-sm min-h-[60px] flex items-center">
-                                                    {menu[meal]}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                    <div class="flex gap-4" style="flex-wrap:wrap; display:flex; gap: 1rem;">
+                        <div style="flex:1; min-width:200px;">
+                            <label class="text-xs font-bold text-muted uppercase mb-1 block"
+                                style="display:block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Course
+                                Filter</label>
+                            <select id="filter-course" class="input-field" onchange="app.admin.applyFilter()">
+                                <option value="">All Courses</option>
+                                <option value="MCA 1ST YEAR">MCA 1ST YEAR</option>
+                                <option value="MCA 2ND YEAR">MCA 2ND YEAR</option>
+                                <option value="MBA 1ST YEAR">MBA 1ST YEAR</option>
+                                <option value="MBA 2ND YEAR">MBA 2ND YEAR</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <label class="text-xs font-bold text-muted uppercase mb-1 block"
+                                style="display:block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Batch
+                                Filter</label>
+                            <select id="filter-batch" class="input-field" onchange="app.admin.applyFilter()">
+                                <option value="">All Batches</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end" style="display:flex; align-items: flex-end;">
+                            <button class="btn" onclick="app.admin.clearFilter()"
+                                style="background:white; border:1px solid var(--border); border-radius:0.5rem; height: 2.75rem;">
+                                <span class="material-symbols-rounded">filter_list_off</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="admin-student-list">
+                        <thead>
+                            <tr>
+                                <th>College ID</th>
+                                <th>Student Name</th>
+                                <th>Degree/Course</th>
+                                <th>Batch Year</th>
+                                <th>Management</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="student-list-empty" class="hidden text-center p-12" style="padding: 3rem; text-align: center;">
+                    <span class="material-symbols-rounded text-slate-300"
+                        style="font-size: 4rem; display: block; margin-bottom: 1rem; color: #cbd5e1;">person_search</span>
+                    <h4 class="font-bold text-slate-500">No Students Found</h4>
+                    <p class="text-sm text-slate-400">Try adjusting your filters or add a new student above.</p>
+                </div>
+            </div>
+
+            <!-- Reporting Section -->
+            <div class="card shadow-premium overflow-hidden mt-8">
+                <div class="p-6 bg-slate-50 border-b border-slate-200">
+                    <div class="flex justify-between items-center mb-6"
+                        style="flex-wrap:wrap; gap:1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div class="icon-box" style="background:#0f172a; color:white;"><span
+                                    class="material-symbols-rounded">summarize</span></div>
+                            <h3 class="font-bold m-0" style="margin:0;">Attendance Report</h3>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="date" id="admin-report-date" class="input-field"
+                                onchange="app.admin.renderReport()">
+                        </div>
+                    </div>
+
+                    <!-- Filter Row for Report -->
+                    <div class="flex gap-4" style="flex-wrap:wrap; display:flex; gap: 1rem;">
+                        <div style="flex:1; min-width:200px;">
+                            <label class="text-xs font-bold text-muted uppercase mb-1 block"
+                                style="display:block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Course
+                                Filter</label>
+                            <select id="filter-report-course" class="input-field" onchange="app.admin.renderReport()">
+                                <option value="">All Courses</option>
+                                <option value="MCA 1ST YEAR">MCA 1ST YEAR</option>
+                                <option value="MCA 2ND YEAR">MCA 2ND YEAR</option>
+                                <option value="MBA 1ST YEAR">MBA 1ST YEAR</option>
+                                <option value="MBA 2ND YEAR">MBA 2ND YEAR</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <label class="text-xs font-bold text-muted uppercase mb-1 block"
+                                style="display:block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Batch
+                                Filter</label>
+                            <select id="filter-report-batch" class="input-field" onchange="app.admin.renderReport()">
+                                <option value="">All Batches</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="admin-report-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>NAME</th>
+                                <th class="text-center">BREAKFAST STATUS</th>
+                                <th class="text-center">LUNCH STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="p-6 bg-slate-50 border-t border-slate-200"
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                    <button class="btn btn-primary" onclick="app.admin.printDailyReport()" style="background:#0f172a;">
+                        <span class="material-symbols-rounded">print</span> Print Daily Sheet
+                    </button>
+                    <button class="btn btn-success" onclick="alert('Success: Report successfully sent to Mess Staff!')">
+                        <span class="material-symbols-rounded">send</span> Dispatch to Mess Staff
+                    </button>
+                </div>
+            </div>
+
+            <!-- Monthly Report Section -->
+            <div id="view-monthly-report" class="card shadow-premium overflow-hidden mt-8">
+                <div class="p-6 bg-slate-50 border-b border-slate-200 no-print">
+                    <div class="flex justify-between items-center mb-6"
+                        style="flex-wrap:wrap; gap:1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div class="icon-box" style="background:var(--success); color:white;"><span
+                                    class="material-symbols-rounded">calendar_month</span></div>
+                            <h3 class="font-bold m-0" style="margin:0;">Monthly Analytics</h3>
+                        </div>
+                        <div class="flex gap-2" style="display:flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <div style="display: flex; flex-direction: column;">
+                                <label class="text-xs font-bold text-muted uppercase mb-1"
+                                    style="font-size: 0.65rem;">Find Date</label>
+                                <input type="date" id="adm-month-date-filter" class="input-field"
+                                    style="width:140px; padding: 0.5rem;" onchange="app.admin.onMonthlyDateChange()">
+                            </div>
+                            <div style="display: flex; flex-direction: column;">
+                                <label class="text-xs font-bold text-muted uppercase mb-1"
+                                    style="font-size: 0.65rem;">Month</label>
+                                <select id="adm-month-select" class="input-field" style="width:130px; padding: 0.5rem;"
+                                    onchange="app.admin.renderMonthlyReport()">
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                                <div style="display: flex; flex-direction: column;">
+                                    <label class="text-xs font-bold text-muted uppercase mb-1"
+                                        style="font-size: 0.65rem;">Year</label>
+                                    <select id="adm-year-select" class="input-field"
+                                        style="width:100px; padding: 0.5rem;"
+                                        onchange="app.admin.renderMonthlyReport()">
+                                        <option value="2026">2026</option>
+                                        <option value="2027">2027</option>
+                                    </select>
                                 </div>
-                            </Card>
-
-                            {/* Live Stats Visualization */}
-                            <Card title="Live Headcount (For Cooking)">
-                                <div className="space-y-4">
-                                    {['breakfast', 'lunch', 'dinner'].map(meal => {
-                                        const count = stats[meal];
-                                        const percentage = (count / stats.totalStudents) * 100;
-                                        return (
-                                            <div key={meal}>
-                                                <div className="flex justify-between text-sm mb-1">
-                                                    <span className="capitalize font-medium text-gray-700">{meal}</span>
-                                                    <span className="text-blue-600 font-bold">{count} Students</span>
-                                                </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-4">
-                                                    <div 
-                                                        className="bg-blue-600 h-4 rounded-full transition-all duration-1000 ease-out" 
-                                                        style={{ width: `${percentage}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                <div style="display: flex; align-items: flex-end;">
+                                    <button class="btn btn-primary no-print" onclick="app.admin.printMonthlyReport()"
+                                        style="background:#0f172a; height: 38px;">
+                                        <span class="material-symbols-rounded">print</span> Print Report
+                                    </button>
                                 </div>
-                            </Card>
-                        </div>
-
-                        {/* Side Info */}
-                        <div className="space-y-6">
-                            <Card title="Inventory Status">
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600">Rice</span>
-                                        <span className="text-green-600 font-bold">OK</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600">Vegetables</span>
-                                        <span className="text-yellow-600 font-bold">Low</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600">Dairy</span>
-                                        <span className="text-green-600 font-bold">OK</span>
-                                    </div>
-                                </div>
-                            </Card>
+                            </div>
                         </div>
                     </div>
-                </div>
-            );
-        };
 
-        const AdminDashboard = ({ user, onLogout }) => {
-            const [users, setUsers] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [toast, setToast] = useState(null);
-
-            useEffect(() => {
-                loadUsers();
-            }, []);
-
-            const loadUsers = async () => {
-                const data = await API.getUsers();
-                setUsers(data);
-                setLoading(false);
-            };
-
-            const handleExport = async () => {
-                const { users, attendance } = await API.exportData();
-                
-                // Create CSV Content
-                let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "ID,Name,Role,Email,Hostel\n";
-                users.forEach(u => {
-                    csvContent += `${u.id},${u.name},${u.role},${u.email},${u.hostel || 'N/A'}\n`;
-                });
-
-                // Trigger Download
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "smart_mess_report.csv");
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                setToast({ message: "Report downloaded successfully", type: "success" });
-            };
-
-            return (
-                <div className="max-w-6xl mx-auto p-6 fade-in">
-                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
-                    <header className="flex justify-between items-center mb-8">
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-800">System Administration</h2>
-                            <p className="text-gray-500">Manage users and system settings</p>
-                        </div>
-                        <div className="flex gap-3">
-                             <Button onClick={handleExport}><i className="fas fa-file-csv"></i> Export CSV</Button>
-                             <Button variant="secondary" onClick={onLogout}>Logout</Button>
-                        </div>
-                    </header>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <Card className="bg-blue-50 border-blue-100">
-                            <h4 className="text-blue-800 font-bold text-lg">Total Users</h4>
-                            <p className="text-3xl font-bold text-blue-600 mt-2">{users.length}</p>
-                        </Card>
-                        <Card className="bg-purple-50 border-purple-100">
-                            <h4 className="text-purple-800 font-bold text-lg">System Status</h4>
-                            <p className="text-green-600 font-bold mt-2 flex items-center gap-2">
-                                <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span> Operational
-                            </p>
-                        </Card>
-                        <Card className="bg-orange-50 border-orange-100">
-                            <h4 className="text-orange-800 font-bold text-lg">Database Storage</h4>
-                            <p className="text-orange-600 font-bold mt-2">Local (Simulated)</p>
-                        </Card>
+                    <div class="p-8 print-only-header"
+                        style="display:none; text-align:center; border-bottom: 2px solid #333; margin-bottom: 2rem;">
+                        <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Chetan Business School</h1>
+                        <h2 style="font-size: 1.5rem; color: #666;" id="print-report-title">Monthly Mess Attendance
+                            Report</h2>
                     </div>
 
-                    <Card title="User Management">
-                        {loading ? (
-                            <div className="text-center py-4"><div className="loader mx-auto"></div></div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="text-gray-500 text-sm border-b">
-                                            <th className="p-3">ID</th>
-                                            <th className="p-3">Name</th>
-                                            <th className="p-3">Role</th>
-                                            <th className="p-3">Email</th>
-                                            <th className="p-3">Details</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {users.map(u => (
-                                            <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50">
-                                                <td className="p-3 text-gray-600">#{u.id}</td>
-                                                <td className="p-3 font-medium">{u.name}</td>
-                                                <td className="p-3">
-                                                    <span className={`px-2 py-1 rounded text-xs font-bold 
-                                                        ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 
-                                                          u.role === 'mess' ? 'bg-orange-100 text-orange-700' : 
-                                                          'bg-blue-100 text-blue-700'}`}>
-                                                        {u.role.toUpperCase()}
-                                                    </span>
-                                                </td>
-                                                <td className="p-3 text-gray-600">{u.email}</td>
-                                                <td className="p-3 text-gray-500">{u.hostel || '-'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                    <div class="p-6">
+                        <div class="grid md:grid-cols-2 gap-6 mb-8"
+                            style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                            <div class="p-6 rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 text-center"
+                                style="background:#ecfdf5; border: 2px dashed #a7f3d0; border-radius: 1rem; padding: 1.5rem;">
+                                <div class="text-emerald-600 font-bold uppercase text-xs tracking-widest mb-1">Monthly
+                                    Breakfast Total</div>
+                                <div class="text-4xl font-black text-emerald-800" id="mon-total-bf">0</div>
                             </div>
-                        )}
-                    </Card>
-                </div>
-            );
-        };
-
-        // --- Main App Container ---
-        const App = () => {
-            const [currentUser, setCurrentUser] = useState(null);
-
-            // Check if user session exists (basic persistence simulation)
-            useEffect(() => {
-                const stored = sessionStorage.getItem('smart_mess_user');
-                if (stored) setCurrentUser(JSON.parse(stored));
-            }, []);
-
-            const handleLogin = (user) => {
-                setCurrentUser(user);
-                sessionStorage.setItem('smart_mess_user', JSON.stringify(user));
-            };
-
-            const handleLogout = () => {
-                setCurrentUser(null);
-                sessionStorage.removeItem('smart_mess_user');
-            };
-
-            // Route rendering based on Role
-            const renderDashboard = () => {
-                if (!currentUser) return null;
-
-                switch(currentUser.role) {
-                    case 'student': return <StudentDashboard user={currentUser} onLogout={handleLogout} />;
-                    case 'mess': return <MessDashboard user={currentUser} onLogout={handleLogout} />;
-                    case 'admin': return <AdminDashboard user={currentUser} onLogout={handleLogout} />;
-                    default: return <div className="p-8 text-center text-red-500 text-xl">Error: Unknown Role "{currentUser.role}"</div>;
-                }
-            };
-
-            return (
-                <div className="min-h-screen text-gray-800">
-                    {currentUser ? (
-                        <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
-                            <div className="max-w-6xl mx-auto px-6 h-16 flex items-center gap-2">
-                                <i className="fas fa-utensils text-blue-600 text-xl"></i>
-                                <span className="font-bold text-xl tracking-tight text-blue-900">Smart Mess</span>
+                            <div class="p-6 rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/50 text-center"
+                                style="background:#fffbeb; border: 2px dashed #fde68a; border-radius: 1rem; padding: 1.5rem;">
+                                <div class="text-amber-600 font-bold uppercase text-xs tracking-widest mb-1">Monthly
+                                    Lunch Total</div>
+                                <div class="text-4xl font-black text-amber-800" id="mon-total-lu">0</div>
                             </div>
-                        </nav>
-                    ) : null}
-                    
-                    <main>
-                        {currentUser ? renderDashboard() : <Login onLogin={handleLogin} />}
-                    </main>
-                </div>
-            );
-        };
+                        </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+                        <div class="table-responsive">
+                            <table id="monthly-report-breakdown">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 1.5rem 1rem;">DATE</th>
+                                        <th class="text-center" style="padding: 1.5rem 1rem;">BREAKFAST COUNT</th>
+                                        <th class="text-center" style="padding: 1.5rem 1rem;">LUNCH COUNT</th>
+                                        <th class="text-center" style="padding: 1.5rem 1rem;">TOTAL DAILY</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-slate-50 border-t border-slate-200 text-center text-xs text-muted">
+                        Report generated on <span id="report-gen-time"></span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- MESS DASHBOARD -->
+        <section id="view-mess" class="view-container hidden">
+            <div class="card p-6 mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold">Tomorrow's Mess Totals</h2>
+                    <input type="date" id="mess-date" class="input-field" style="width:auto" onchange="app.mess.load()">
+                </div>
+                <div class="flex gap-6 mb-4">
+                    <div class="flex-1 p-6 text-center"
+                        style="border-radius:1rem; background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 10px 15px -3px rgba(16,185,129,0.4); transition: transform 0.3s;">
+                        <div class="text-sm font-bold uppercase tracking-wider mb-2"
+                            style="color: rgba(255,255,255,0.9);">Breakfast Count</div>
+                        <div class="text-5xl font-extrabold text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                            id="mess-bf-count">0</div>
+                    </div>
+                    <div class="flex-1 p-6 text-center"
+                        style="border-radius:1rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; box-shadow: 0 10px 15px -3px rgba(245,158,11,0.4); transition: transform 0.3s;">
+                        <div class="text-sm font-bold uppercase tracking-wider mb-2"
+                            style="color: rgba(255,255,255,0.9);">Lunch Count</div>
+                        <div class="text-5xl font-extrabold text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                            id="mess-lunch-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="app.js?v=9"></script>
+
+    <!-- PWA Install Guide Modal -->
+    <div id="pwa-guide-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-rounded">install_mobile</span>
+                    <h3 class="font-bold">Install Guide</h3>
+                </div>
+                <button class="btn btn-sm" onclick="app.togglePwaGuide(false)"
+                    style="background: rgba(255,255,255,0.2); color: white; border-radius: 50%; width: 32px; height: 32px; padding: 0;">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-6 text-sm text-center">Your browser is currently preparing the automatic install prompt. If
+                    it doesn't appear, please follow these simple steps:</p>
+
+                <div class="guide-step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <strong>Open Browser Menu</strong>
+                        <p>Click the <strong>three dots (⋮)</strong> in Chrome or the <strong>Share Icon</strong> in
+                            Safari.</p>
+                    </div>
+                </div>
+
+                <div class="guide-step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <strong>Select Install</strong>
+                        <p>Look for <strong>"Install App"</strong> or <strong>"Add to Home Screen"</strong> in the list.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="guide-step" style="margin-bottom: 0;">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <strong>Confirm</strong>
+                        <p>Follow the prompts to add the shortcut to your device.</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary w-full mt-6" onclick="app.togglePwaGuide(false)">Got it!</button>
+            </div>
+        </div>
+    </div>
+    <!-- Custom Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="c-confirm-modal" class="c-modal-overlay">
+        <div class="c-modal">
+            <div class="c-modal-icon">
+                <span class="material-symbols-rounded">help</span>
+            </div>
+            <h3 id="c-confirm-title">Are you sure?</h3>
+            <p id="c-confirm-msg">This action cannot be undone.</p>
+            <div class="c-modal-actions">
+                <button class="btn-c-cancel" id="btn-c-cancel">Cancel</button>
+                <button class="btn-c-confirm" id="btn-c-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Floating Button (Global) -->
+    <button id="global-whatsapp-fab" class="whatsapp-fab no-print" onclick="app.admin.sendWhatsAppReport()"
+        title="Send WhatsApp Report to Owner">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+    </button>
+
+    <!-- Print Area -->
+    <div id="print-area"></div>
 </body>
+
 </html>

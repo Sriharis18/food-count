@@ -1,0 +1,56 @@
+{
+  "name": "Professional Smart Mess System",
+  "short_name": "SmartMess",
+  "description": "Daily food management system for students and mess staff.",
+  "id": "/smart-mess",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "lang": "en-US",
+  "categories": ["food", "productivity"],
+  "icons": [
+    {
+      "src": "image/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "image/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "image/screenshot.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Admin Dashboard"
+    },
+    {
+      "src": "image/screenshot.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "label": "App Preview"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today's Status",
+      "url": "/?view=student",
+      "description": "Check your meal selection for today",
+      "icons": [{ "src": "image/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Admin Dashboard",
+      "url": "/?view=admin",
+      "description": "Manage student attendance",
+      "icons": [{ "src": "image/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
