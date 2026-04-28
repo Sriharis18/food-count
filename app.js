@@ -41,7 +41,7 @@ const app = {
         const d = new Date();
         const t = new Date();
         t.setDate(d.getDate() + 1);
-        
+
         this.state.today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         this.state.tomorrow = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
         const session = localStorage.getItem('sm_session');
@@ -56,10 +56,10 @@ const app = {
         } else {
             this.router.show('view-login');
         }
-        
+
         const messDateEl = document.getElementById('mess-date');
         if (messDateEl) messDateEl.value = this.state.tomorrow;
-        
+
         const studentDateEl = document.getElementById('student-date');
         if (studentDateEl) {
             const t = new Date();
@@ -69,7 +69,7 @@ const app = {
 
         // Standalone detection for PWA Install Buttons
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        
+
         if (isStandalone) {
             this.updateInstallButtons(false); // Already installed and running
         } else {
@@ -97,12 +97,12 @@ const app = {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, password: pass })
                 });
-                
+
                 if (!res.ok) {
                     const data = await res.json().catch(() => ({}));
                     throw new Error(data.error || 'Login failed');
                 }
-                
+
                 const user = await res.json();
                 app.state.user = user;
                 localStorage.setItem('sm_session', JSON.stringify(user));
@@ -114,6 +114,17 @@ const app = {
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
+            }
+        },
+        togglePassword: function () {
+            const passInput = document.getElementById('login-pass');
+            const toggleIcon = document.querySelector('.password-toggle-icon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleIcon.textContent = 'visibility_off';
+            } else {
+                passInput.type = 'password';
+                toggleIcon.textContent = 'visibility';
             }
         },
         logout: function () {
@@ -128,7 +139,7 @@ const app = {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        
+
         const icons = {
             success: 'check_circle',
             error: 'cancel',
@@ -146,10 +157,10 @@ const app = {
         `;
 
         container.appendChild(toast);
-        
+
         // Trigger show animation
         setTimeout(() => toast.classList.add('active'), 100);
-        
+
         // Auto remove
         setTimeout(() => {
             toast.classList.remove('active');
@@ -167,7 +178,7 @@ const app = {
 
         titleEl.textContent = title;
         msgEl.textContent = msg;
-        
+
         // Color theme for modal
         if (type === 'danger') {
             confirmBtn.style.background = '#e11d48';
@@ -217,7 +228,7 @@ const app = {
             } else {
                 header.classList.remove('hidden');
                 document.getElementById('header-user-name').textContent = app.state.user.name;
-                
+
                 // Only show WhatsApp button for Admin view
                 if (viewId === 'view-admin') whatsappBtn?.classList.remove('hidden');
                 else whatsappBtn?.classList.add('hidden');
@@ -237,11 +248,11 @@ const app = {
                 if (this._countdownInterval) clearInterval(this._countdownInterval);
                 const settingsRes = await fetch(`${API_BASE}/admin/settings`);
                 const settings = await settingsRes.json();
-                
+
                 const statusRes = await fetch(`${API_BASE}/student/status?userId=${app.state.user.id}&date=${app.state.tomorrow}`);
-                
+
                 const now = new Date();
-                
+
                 const [s_hh, s_mm] = (settings.startTime || '00:00').split(':');
                 const startDate = new Date();
                 startDate.setHours(parseInt(s_hh, 10), parseInt(s_mm, 10), 0, 0);
@@ -255,13 +266,13 @@ const app = {
 
                 const targetDate = new Date();
                 targetDate.setDate(targetDate.getDate() + 1);
-                const isTomorrowSaturday = targetDate.getDay() === 6;
+                const isTomorrowSunday = targetDate.getDay() === 0;
 
-                const isLocked = isTooEarly || isTooLate || settings.holiday || isTomorrowSaturday;
+                const isLocked = isTooEarly || isTooLate || settings.holiday || isTomorrowSunday;
 
                 let lockMsg = '';
                 if (settings.holiday) lockMsg = 'Today is marked as a Holiday by Admin.';
-                else if (isTomorrowSaturday) lockMsg = 'Tomorrow (Saturday) is a weekly holiday. No food served.';
+                else if (isTomorrowSunday) lockMsg = 'Tomorrow (Sunday) is a weekly holiday. No food served.';
                 else if (isTooEarly) lockMsg = `Submissions have not started yet. Starts at ${settings.startTime || '00:00'}.`;
                 else if (isTooLate) lockMsg = `Submissions are closed. Passed cutoff time of ${settings.cutoff}.`;
 
@@ -273,7 +284,7 @@ const app = {
                     const mySub = await statusRes.json();
                     document.getElementById('student-form').classList.add('hidden');
                     document.getElementById('student-locked').classList.remove('hidden');
-                    
+
                     statusTitle.textContent = "Your today's choice is over";
                     statusTitle.className = "font-bold text-xl mb-2 text-emerald-600";
                     statusMsg.textContent = "You have successfully submitted your selection for tomorrow.";
@@ -297,12 +308,12 @@ const app = {
                     if (isLocked) {
                         document.getElementById('student-form').classList.add('hidden');
                         document.getElementById('student-locked').classList.remove('hidden');
-                        
+
                         statusTitle.textContent = isTooEarly ? 'Opens Soon' : 'Submissions Closed';
                         statusTitle.className = "font-bold text-xl mb-2 text-slate-800";
                         statusMsg.textContent = lockMsg;
                         dataDiv.innerHTML = `<p class="text-center text-slate-400 py-2 italic text-sm">Action required at opening time</p>`;
-                        
+
                         this.startCountdown(settings.startTime);
                     } else {
                         document.getElementById('student-form').classList.remove('hidden');
@@ -353,9 +364,9 @@ const app = {
                 if (now >= target) target.setDate(target.getDate() + 1);
                 const diff = target - now;
                 if (diff < 0) {
-                     const el = document.getElementById('opening-countdown');
-                     if (el) el.textContent = "00:00:00";
-                     return;
+                    const el = document.getElementById('opening-countdown');
+                    if (el) el.textContent = "00:00:00";
+                    return;
                 }
                 const hh = Math.floor(diff / (1000 * 60 * 60));
                 const mm = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -378,16 +389,16 @@ const app = {
                         batchSelect.add(new Option(y, y));
                     }
                 }
-                
+
                 const settingsRes = await fetch(`${API_BASE}/admin/settings`);
                 const settings = await settingsRes.json();
                 document.getElementById('adm-start').value = settings.startTime || '00:00';
                 document.getElementById('adm-cutoff').value = settings.cutoff;
                 document.getElementById('adm-holiday').checked = settings.holiday;
-                
+
                 await this.renderStats();
                 await this.renderList();
-                
+
                 // Load Guests for tomorrow
                 const guestRes = await fetch(`${API_BASE}/admin/guests?date=${app.state.tomorrow}`);
                 const guestData = await guestRes.json();
@@ -445,7 +456,7 @@ const app = {
                 // Populate batch filter dropdown dynamically from actual data
                 const filterBatch = document.getElementById('filter-batch');
                 const filterReportBatch = document.getElementById('filter-report-batch');
-                
+
                 const existingBatches = new Set(
                     [...filterBatch.options].slice(1).map(o => o.value)
                 );
@@ -521,7 +532,7 @@ const app = {
             try {
                 const res = await fetch(`${API_BASE}/mess/report?date=${date}`);
                 const allSubs = await res.json();
-                
+
                 const filtered = allSubs.filter(s => {
                     const courseMatch = !filterCourse || s.course === filterCourse;
                     const batchMatch = !filterBatch || String(s.batch) === String(filterBatch);
@@ -595,16 +606,16 @@ const app = {
             const date = document.getElementById('admin-report-date').value;
             const btn = document.querySelector('.whatsapp-fab');
             const originalIcon = btn.innerHTML;
-            
+
             try {
                 btn.innerHTML = '<div class="spinner" style="width:20px; height:20px; border-width:2px;"></div>';
                 const res = await fetch(`${API_BASE}/admin/stats?date=${date}`);
                 const stats = await res.json();
-                
-                const formattedDate = new Date(date).toLocaleDateString('en-IN', { 
-                    day: 'numeric', 
-                    month: 'short', 
-                    year: 'numeric' 
+
+                const formattedDate = new Date(date).toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
                 });
 
                 const gBf = stats.guests?.breakfast || 0;
@@ -636,8 +647,9 @@ const app = {
         renderMonthlyReport: async function () {
             const month = document.getElementById('adm-month-select').value;
             const year = document.getElementById('adm-year-select').value;
-            const specificDate = document.getElementById('adm-month-date-filter').value;
-            
+            const fromDate = document.getElementById('adm-month-from').value;
+            const toDate = document.getElementById('adm-month-to').value;
+
             const tbody = document.querySelector('#monthly-report-breakdown tbody');
             const bfTotalEl = document.getElementById('mon-total-bf');
             const luTotalEl = document.getElementById('mon-total-lu');
@@ -646,18 +658,31 @@ const app = {
             try {
                 const res = await fetch(`${API_BASE}/admin/monthly-report?month=${month}&year=${year}`);
                 const data = await res.json();
-                
-                bfTotalEl.textContent = data.totals.breakfast + (data.totals.guests ? data.totals.guests.breakfast : 0);
-                luTotalEl.textContent = data.totals.lunch + (data.totals.guests ? data.totals.guests.lunch : 0);
+
                 genTimeEl.textContent = new Date().toLocaleString();
 
                 tbody.innerHTML = '';
                 let displayData = data.daily;
 
-                // Filter by specific date if requested
-                if (specificDate) {
-                    displayData = data.daily.filter(d => d.date.split('T')[0] === specificDate);
+                // Filter by date range if requested
+                if (fromDate || toDate) {
+                    displayData = data.daily.filter(d => {
+                        const dStr = d.date.split('T')[0];
+                        if (fromDate && dStr < fromDate) return false;
+                        if (toDate && dStr > toDate) return false;
+                        return true;
+                    });
                 }
+
+                // Recalculate totals for the filtered/displayed range
+                let rangeBf = 0;
+                let rangeLu = 0;
+                displayData.forEach(d => {
+                    rangeBf += d.breakfast + (d.guests ? d.guests.breakfast : 0);
+                    rangeLu += d.lunch + (d.guests ? d.guests.lunch : 0);
+                });
+                bfTotalEl.textContent = rangeBf;
+                luTotalEl.textContent = rangeLu;
 
                 if (displayData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-8">No data found for this selection</td></tr>';
@@ -668,7 +693,7 @@ const app = {
                         const weekday = dateObj.toLocaleDateString('en-IN', { weekday: 'short' });
                         const gBf = d.guests ? d.guests.breakfast : 0;
                         const gLu = d.guests ? d.guests.lunch : 0;
-                        
+
                         tbody.innerHTML += `
                             <tr>
                                 <td data-label="Date"><strong>${dayStr}</strong> (${weekday})</td>
@@ -690,20 +715,17 @@ const app = {
             }
         },
         onMonthlyDateChange: function () {
-            const dateVal = document.getElementById('adm-month-date-filter').value;
-            if (!dateVal) return;
-
-            const [y, m, d] = dateVal.split('-');
-            document.getElementById('adm-month-select').value = parseInt(m);
-            document.getElementById('adm-year-select').value = y;
-            
-            this.renderMonthlyReport();
+            // Deprecated
         },
         printMonthlyReport: function () {
             const mSelect = document.getElementById('adm-month-select');
             const ySelect = document.getElementById('adm-year-select');
             const mName = mSelect.options[mSelect.selectedIndex].text;
             const year = ySelect.value;
+            
+            const fromDate = document.getElementById('adm-month-from').value;
+            const toDate = document.getElementById('adm-month-to').value;
+            const rangeText = (fromDate || toDate) ? `<br><small>Range: ${fromDate || 'Start'} to ${toDate || 'End'}</small>` : '';
             
             const printArea = document.getElementById('print-area');
             const tableClone = document.getElementById('monthly-report-breakdown').cloneNode(true);
@@ -712,19 +734,19 @@ const app = {
             printArea.innerHTML = `
                 <div class="print-header">
                     <h1>Chetan Business School</h1>
-                    <h2>Monthly Mess Attendance Report - ${mName} ${year}</h2>
+                    <h2>Monthly Mess Attendance Report - ${mName} ${year}${rangeText}</h2>
                     <p style="margin-top:10px">Total Breakfast: ${document.getElementById('mon-total-bf').textContent} | Total Lunch: ${document.getElementById('mon-total-lu').textContent}</p>
                 </div>
             `;
             printArea.appendChild(tableClone);
-            
+
             window.print();
         },
-        printDailyReport: function() {
+        printDailyReport: function () {
             const date = document.getElementById('admin-report-date').value || new Date().toISOString().split('T')[0];
             const tableClone = document.getElementById('admin-report-table').cloneNode(true);
             const printArea = document.getElementById('print-area');
-            
+
             printArea.innerHTML = `
                 <div class="print-header">
                     <h1>Chetan Business School</h1>
@@ -732,7 +754,7 @@ const app = {
                 </div>
             `;
             printArea.appendChild(tableClone);
-            
+
             window.print();
         },
         saveGuests: async function () {
@@ -741,14 +763,14 @@ const app = {
             const bf = parseInt(bfInput.value) || 0;
             const lu = parseInt(luInput.value) || 0;
             const date = app.state.tomorrow;
-            
+
             try {
                 const res = await fetch(`${API_BASE}/admin/guests`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ date, breakfast: bf, lunch: lu })
                 });
-                
+
                 if (res.ok) {
                     app.showToast('Guest counts updated', 'success');
                     await this.renderStats();
@@ -853,7 +875,7 @@ const app = {
             reader.readAsArrayBuffer(file);
         },
 
-        downloadTemplate: function() {
+        downloadTemplate: function () {
             const data = [
                 { "Name": "John Doe", "College ID": "CBS001", "Course": "MCA 1ST YEAR", "Batch": "2026", "Date of Birth": "15-05-2002" },
                 { "Name": "Jane Smith", "College ID": "CBS002", "Course": "MBA 2ND YEAR", "Batch": "2027", "Date of Birth": "20-10-2001" }
@@ -871,13 +893,13 @@ const app = {
             try {
                 const res = await fetch(`${API_BASE}/admin/stats?date=${date}`);
                 const stats = await res.json();
-                
+
                 const gBf = stats.guests ? stats.guests.breakfast : 0;
                 const gLu = stats.guests ? stats.guests.lunch : 0;
 
                 document.getElementById('mess-bf-count').textContent = stats.breakfast + gBf;
                 document.getElementById('mess-lunch-count').textContent = stats.lunch + gLu;
-                
+
                 // Add sub-info if guests exist
                 if (gBf > 0 || gLu > 0) {
                     console.log(`Mess: Students ${stats.breakfast}/${stats.lunch}, Guests ${gBf}/${gLu}`);
@@ -901,11 +923,11 @@ const app = {
             this.togglePwaGuide(true);
             return;
         }
-        
+
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         console.log(`PWA: User response - ${outcome}`);
-        
+
         deferredPrompt = null;
         document.getElementById('pwa-install-header')?.classList.add('hidden');
         document.getElementById('pwa-install-landing')?.classList.add('hidden');
@@ -920,7 +942,7 @@ const app = {
     updateInstallButtons: function (show = true) {
         const headerBtn = document.getElementById('pwa-install-header');
         const landingBtn = document.getElementById('pwa-install-landing');
-        
+
         if (show) {
             headerBtn?.classList.remove('hidden');
             landingBtn?.classList.remove('hidden');
