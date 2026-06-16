@@ -108,6 +108,11 @@ const app = {
                 localStorage.setItem('sm_session', JSON.stringify(user));
                 app.router.go(user.role);
                 document.getElementById('login-form').reset();
+
+                // Subscribe to push notifications after login
+                if (user.role === 'student') {
+                    app.push.subscribe(user.id);
+                }
             } catch (err) {
                 errorBox.textContent = err.message || err;
                 errorBox.classList.remove('hidden');
@@ -132,6 +137,47 @@ const app = {
             localStorage.removeItem('sm_session');
             app.router.show('view-login');
             location.reload();
+        },
+        register: async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-register-submit');
+            const errorBox = document.getElementById('register-error');
+            const successBox = document.getElementById('register-success');
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="spinner"></div> Registering...';
+            btn.disabled = true;
+            errorBox.classList.add('hidden');
+            successBox.classList.add('hidden');
+
+            const name = document.getElementById('reg-name').value.trim();
+            const collegeId = document.getElementById('reg-id').value.trim();
+            const course = document.getElementById('reg-course').value;
+            const batch = document.getElementById('reg-batch').value;
+            const password = document.getElementById('reg-pass').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collegeId, name, course, batch, password })
+                });
+
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(data.error || 'Registration failed');
+                }
+
+                successBox.textContent = data.message;
+                successBox.classList.remove('hidden');
+                document.getElementById('register-form').reset();
+            } catch (err) {
+                errorBox.textContent = err.message || err;
+                errorBox.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
     },
 
@@ -377,6 +423,59 @@ const app = {
             };
             update();
             this._countdownInterval = setInterval(update, 1000);
+        },
+        openScanner: function () {
+            const qrReaderEl = document.getElementById('qr-reader');
+            const btnScan = document.getElementById('btn-scan-qr');
+
+            if (!this._html5QrCode) {
+                this._html5QrCode = new Html5Qrcode("qr-reader");
+            }
+
+            if (this._html5QrCode.isScanning) {
+                this._html5QrCode.stop().then(() => {
+                    qrReaderEl.classList.add('hidden');
+                    btnScan.innerHTML = '<span class="material-symbols-rounded">qr_code_scanner</span> Scan QR for Today\'s Food';
+                }).catch(err => {
+                    console.error("Failed to stop scanning", err);
+                });
+                return;
+            }
+
+            qrReaderEl.classList.remove('hidden');
+            btnScan.innerHTML = '<span class="material-symbols-rounded">close</span> Cancel Scan';
+
+            this._html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                async (decodedText, decodedResult) => {
+                    // Stop scanning on success
+                    if (this._html5QrCode.isScanning) {
+                        await this._html5QrCode.stop();
+                        qrReaderEl.classList.add('hidden');
+                        btnScan.innerHTML = '<span class="material-symbols-rounded">qr_code_scanner</span> Scan QR for Today\'s Food';
+                    }
+
+                    try {
+                        const statusRes = await fetch(`${API_BASE}/student/status?userId=${app.state.user.id}&date=${app.state.today}`);
+                        if (statusRes.ok) {
+                            const mySub = await statusRes.json();
+                            app.confirm("Today's Food Count", `Breakfast: ${mySub.breakfast ? 'YES' : 'NO'}\nLunch: ${mySub.lunch ? 'YES' : 'NO'}`, "info");
+                        } else {
+                            app.confirm("Today's Food Count", "No count given for today.", "info");
+                        }
+                    } catch (err) {
+                        app.showToast("Error fetching count", "error");
+                    }
+                },
+                (errorMessage) => {
+                    // Ignore parse errors, they happen continuously until a QR is found
+                }
+            ).catch((err) => {
+                app.showToast("Camera access denied or error", "error");
+                qrReaderEl.classList.add('hidden');
+                btnScan.innerHTML = '<span class="material-symbols-rounded">qr_code_scanner</span> Scan QR for Today\'s Food';
+            });
         }
     },
 
@@ -385,7 +484,7 @@ const app = {
             try {
                 const batchSelect = document.getElementById('new-stu-batch');
                 if (batchSelect && batchSelect.options.length <= 1) {
-                    for (let y = 2026; y <= 2036; y++) {
+                    for (let y = 2025; y <= 2036; y++) {
                         batchSelect.add(new Option(y, y));
                     }
                 }
@@ -398,6 +497,7 @@ const app = {
 
                 await this.renderStats();
                 await this.renderList();
+                await this.loadPending();
 
                 // Load Guests for tomorrow
                 const guestRes = await fetch(`${API_BASE}/admin/guests?date=${app.state.tomorrow}`);
@@ -444,6 +544,68 @@ const app = {
                 document.getElementById('adm-guests').textContent = `${stats.guests.breakfast} / ${stats.guests.lunch}`;
             } catch (err) {
                 console.error('Stats error:', err);
+            }
+        },
+        loadPending: async function () {
+            try {
+                const res = await fetch(`${API_BASE}/admin/pending`);
+                const pending = await res.json();
+
+                const tbody = document.querySelector('#admin-pending-list tbody');
+                const emptyMsg = document.getElementById('pending-list-empty');
+
+                tbody.innerHTML = '';
+                if (pending.length === 0) {
+                    emptyMsg.classList.remove('hidden');
+                } else {
+                    emptyMsg.classList.add('hidden');
+                    pending.forEach(s => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td data-label="College ID">${s.collegeId}</td>
+                                <td data-label="Name">${s.name}</td>
+                                <td data-label="Course">${s.course || '-'}</td>
+                                <td data-label="Batch">${s.batch || '-'}</td>
+                                <td data-label="Action">
+                                    <div class="flex gap-2">
+                                        <button class="btn btn-success btn-sm" onclick="app.admin.approve('${s.collegeId}')">Yes</button>
+                                        <button class="btn btn-danger btn-sm" onclick="app.admin.reject('${s.collegeId}')">No</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (err) {
+                console.error('Load pending error:', err);
+            }
+        },
+        approve: async function (collegeId) {
+            try {
+                const res = await fetch(`${API_BASE}/admin/approve/${collegeId}`, { method: 'POST' });
+                if (res.ok) {
+                    app.showToast('Student Approved', 'success');
+                    this.loadPending();
+                    this.renderList();
+                    this.renderStats();
+                } else {
+                    app.showToast('Failed to approve', 'error');
+                }
+            } catch (err) {
+                console.error('Approve error:', err);
+            }
+        },
+        reject: async function (collegeId) {
+            try {
+                const res = await fetch(`${API_BASE}/admin/reject/${collegeId}`, { method: 'POST' });
+                if (res.ok) {
+                    app.showToast('Student Rejected', 'info');
+                    this.loadPending();
+                } else {
+                    app.showToast('Failed to reject', 'error');
+                }
+            } catch (err) {
+                console.error('Reject error:', err);
             }
         },
         renderList: async function () {
@@ -635,7 +797,7 @@ const app = {
                     `_Generated by CBS Smart Mess Application_`
                 );
 
-                const phoneNumber = '919380450331';
+                const phoneNumber = '919945664063';
                 window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
             } catch (err) {
                 console.error('WhatsApp report error:', err);
@@ -722,14 +884,14 @@ const app = {
             const ySelect = document.getElementById('adm-year-select');
             const mName = mSelect.options[mSelect.selectedIndex].text;
             const year = ySelect.value;
-            
+
             const fromDate = document.getElementById('adm-month-from').value;
             const toDate = document.getElementById('adm-month-to').value;
             const rangeText = (fromDate || toDate) ? `<br><small>Range: ${fromDate || 'Start'} to ${toDate || 'End'}</small>` : '';
-            
+
             const printArea = document.getElementById('print-area');
             const tableClone = document.getElementById('monthly-report-breakdown').cloneNode(true);
-            
+
             // Format for professional print
             printArea.innerHTML = `
                 <div class="print-header">
@@ -950,8 +1112,62 @@ const app = {
             headerBtn?.classList.add('hidden');
             landingBtn?.classList.add('hidden');
         }
+    },
+
+    push: {
+        subscribe: async function (userId) {
+            try {
+                // Check if push is supported
+                if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    console.log('Push notifications not supported in this browser.');
+                    return;
+                }
+
+                // Ask permission
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    console.log('Notification permission denied.');
+                    return;
+                }
+
+                // Get VAPID public key from server
+                const keyRes = await fetch(`${API_BASE}/push/vapid-key`);
+                const { publicKey } = await keyRes.json();
+
+                // Get service worker registration
+                const reg = await navigator.serviceWorker.ready;
+
+                // Convert VAPID key
+                const applicationServerKey = this.urlBase64ToUint8Array(publicKey);
+
+                // Subscribe
+                const subscription = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey
+                });
+
+                // Send subscription to server
+                await fetch(`${API_BASE}/push/subscribe`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, subscription })
+                });
+
+                console.log('Push notification subscription saved.');
+            } catch (err) {
+                console.error('Push subscription error:', err);
+            }
+        },
+
+        urlBase64ToUint8Array: function (base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = atob(base64);
+            return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+        }
     }
 };
+
 
 // Start App
 document.addEventListener('DOMContentLoaded', () => {

@@ -32,7 +32,8 @@ async function initDB() {
                 password VARCHAR(255) NOT NULL,
                 role ENUM('admin', 'student', 'mess') NOT NULL,
                 course VARCHAR(100),
-                batch VARCHAR(50)
+                batch VARCHAR(50),
+                is_approved BOOLEAN DEFAULT 0
             );
         `);
 
@@ -57,6 +58,19 @@ async function initDB() {
                 console.log('batch column already exists.');
             } else {
                 console.error('Error adding batch column:', e.message);
+            }
+        }
+
+        try {
+            await connection.query('ALTER TABLE users ADD COLUMN is_approved BOOLEAN DEFAULT 0');
+            // Ensure existing admins and mess users are approved
+            await connection.query('UPDATE users SET is_approved = 1 WHERE role != "student"');
+            console.log('Added is_approved column to users table.');
+        } catch (e) {
+            if (e.code === 'ER_DUP_FIELDNAME') {
+                console.log('is_approved column already exists.');
+            } else {
+                console.error('Error adding is_approved column:', e.message);
             }
         }
 
@@ -96,6 +110,21 @@ async function initDB() {
                 lunch INT DEFAULT 0
             );
         `);
+
+        // Create Push Subscriptions Table
+        console.log('Creating push_subscriptions table...');
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                userId INT NOT NULL,
+                endpoint TEXT NOT NULL,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_endpoint (endpoint(255))
+            );
+        `);
+
 
         // Insert default admin if not exists
         console.log('Checking for default admin account...');

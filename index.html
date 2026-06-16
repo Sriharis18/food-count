@@ -1461,7 +1461,8 @@
                     </button>
                 </div>
 
-                <footer class="app-footer" style="position: absolute; bottom: 0; background: #ffffff00; border: none; color: white;">
+                <footer class="app-footer"
+                    style="position: absolute; bottom: 0; background: #ffffff00; border: none; color: white;">
                     <p>&copy; 2026 CBS Smart Mess. All rights reserved.</p>
                     <p style="margin-top: 0.25rem;">Developed by <b style="color: white;">SRIHARI.S</b></p>
                 </footer>
@@ -1506,9 +1507,87 @@
                         </button>
                     </form>
 
+                    <button type="button" class="btn w-full mt-4"
+                        style="background: var(--bg-body); border: 1px solid var(--border); color: var(--text-main);"
+                        onclick="document.getElementById('login-box').classList.add('hidden'); document.getElementById('register-box').classList.remove('hidden');">
+                        <span>Register as Student</span>
+                    </button>
+
                     <div class="mt-4 pt-4 border-t border-slate-100 text-center">
                         <p class="text-xs text-muted italic">Secure student access portal</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- REGISTER BOX -->
+            <div id="register-box" class="login-wrapper h-full hidden">
+                <div class="card login-card" style="animation: fadeInUp 0.5s ease-out forwards; max-width: 500px;">
+                    <button class="login-close-btn"
+                        onclick="document.getElementById('register-box').classList.add('hidden'); document.getElementById('login-box').classList.remove('hidden');"
+                        title="Back to Login">
+                        <span class="material-symbols-rounded">arrow_back</span>
+                    </button>
+                    <div class="text-center mb-4">
+                        <h2 class="font-bold" style="font-size: 1.5rem; margin-bottom: 0.5rem;">Student Registration
+                        </h2>
+                        <p class="text-muted text-sm">Create an account to access Smart Mess</p>
+                    </div>
+
+                    <div id="register-error" class="error-msg hidden"></div>
+                    <div id="register-success" class="warn-msg hidden"
+                        style="background:#dcfce7; color:#166534; border-color:#86efac;"></div>
+
+                    <form id="register-form" onsubmit="app.auth.register(event)">
+                        <div class="input-group">
+                            <label>Full Name</label>
+                            <input type="text" id="reg-name" class="input-field" placeholder="Enter Full Name" required>
+                        </div>
+                        <div class="input-group">
+                            <label>College ID</label>
+                            <input type="text" id="reg-id" class="input-field" placeholder="Enter College ID" required>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4"
+                            style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                            <div class="input-group">
+                                <label>Course</label>
+                                <select id="reg-course" class="input-field" required>
+                                    <option value="">Select Course</option>
+                                    <option value="MCA 1ST YEAR">MCA 1ST YEAR</option>
+                                    <option value="MCA 2ND YEAR">MCA 2ND YEAR</option>
+                                    <option value="MBA 1ST YEAR">MBA 1ST YEAR</option>
+                                    <option value="MBA 2ND YEAR">MBA 2ND YEAR</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Batch</label>
+                                <select id="reg-batch" class="input-field" required>
+                                    <option value="">Select Batch</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026">2026</option>
+                                    <option value="2027">2027</option>
+                                    <option value="2028">2028</option>
+                                    <option value="2029">2029</option>
+                                    <option value="2030">2030</option>
+                                    <option value="2031">2031</option>
+                                    <option value="2032">2032</option>
+                                    <option value="2033">2033</option>
+                                    <option value="2034">2034</option>
+                                    <option value="2035">2035</option>
+                                    <option value="2036">2036</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Password</label>
+                            <div class="password-container">
+                                <input type="password" id="reg-pass" class="input-field" placeholder="Enter Password"
+                                    required>
+                            </div>
+                        </div>
+                        <button type="submit" id="btn-register-submit" class="btn btn-primary w-full mt-2">
+                            <span>Register</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </section>
@@ -1516,6 +1595,13 @@
         <!-- STUDENT DASHBOARD -->
         <section id="view-student" class="view-container hidden">
             <div class="card p-6 mb-4">
+                <button id="btn-scan-qr" class="btn btn-primary w-full mb-6"
+                    style="display: flex; justify-content: center; align-items: center; gap: 8px; background: #10b981; border-color: #10b981;"
+                    onclick="app.student.openScanner()">
+                    <span class="material-symbols-rounded">qr_code_scanner</span> Scan QR for Today's Food
+                </button>
+                <div id="qr-reader" class="hidden mb-6 rounded-xl overflow-hidden border border-slate-200"></div>
+
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="font-bold">Tomorrow's Selection</h2>
                     <span id="student-date" class="text-sm text-muted"></span>
@@ -1718,6 +1804,34 @@
                         <p class="text-xs text-muted italic text-center mt-3">Registration is immediate and allows
                             instant login.</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Pending Approvals Section -->
+            <div class="card shadow-premium mb-8 overflow-hidden">
+                <div class="p-6 bg-amber-50 border-b border-amber-200">
+                    <div class="flex items-center gap-3">
+                        <div class="icon-box" style="background:var(--warning); color:white;"><span
+                                class="material-symbols-rounded">pending_actions</span></div>
+                        <h3 class="font-bold m-0 text-amber-900">Pending Registrations</h3>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="admin-pending-list">
+                        <thead>
+                            <tr>
+                                <th>College ID</th>
+                                <th>Student Name</th>
+                                <th>Course</th>
+                                <th>Batch Year</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div id="pending-list-empty" class="hidden text-center p-8">
+                    <p class="text-sm text-slate-500">No pending registrations at the moment.</p>
                 </div>
             </div>
 
@@ -1987,12 +2101,13 @@
         </section>
 
     </main>
-    
+
     <footer class="app-footer">
         <p>&copy; 2026 CBS Smart Mess. All rights reserved.</p>
         <p style="margin-top: 0.25rem;">Developed by <b>SRIHARI.S</b></p>
     </footer>
 
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="app.js?v=9"></script>
 
     <!-- PWA Install Guide Modal -->

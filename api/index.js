@@ -1,7 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
+const webpush = require('web-push');
 require('dotenv').config();
+
+// Setup VAPID for push notifications
+webpush.setVapidDetails(
+    process.env.VAPID_EMAIL,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,7 +27,7 @@ app.use((req, res, next) => {
 
 // Serve static files from root in Vercel is handled by Vercel automatically
 // But we keep this for local compatibility if needed
-app.use(express.static(__dirname + '/../')); 
+app.use(express.static(__dirname + '/../'));
 
 // Database Pool
 const pool = mysql.createPool({
@@ -54,15 +62,41 @@ app.post('/api/auth/login', async (req, res) => {
     try {
         const { id, password } = req.body;
         const [rows] = await pool.query(
-            'SELECT id, collegeId, name, role FROM users WHERE collegeId = ? AND password = ?',
+            'SELECT id, collegeId, name, role, is_approved FROM users WHERE collegeId = ? AND password = ?',
             [id, password]
         );
-        
+
         if (rows.length > 0) {
-            res.json(rows[0]);
+            const user = rows[0];
+            if (user.role === 'student' && !user.is_approved) {
+                return res.status(401).json({ error: 'Your registration is pending admin approval.' });
+            }
+            res.json({ id: user.id, collegeId: user.collegeId, name: user.name, role: user.role });
         } else {
             res.status(401).json({ error: 'Invalid ID or Password.' });
         }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { collegeId, name, course, batch, password } = req.body;
+
+        // check if exists
+        const [existing] = await pool.query('SELECT id FROM users WHERE collegeId = ?', [collegeId]);
+        if (existing.length > 0) {
+            return res.status(400).json({ error: 'ID Exists' });
+        }
+
+        await pool.query(
+            'INSERT INTO users (collegeId, name, password, role, course, batch, is_approved) VALUES (?, ?, ?, "student", ?, ?, 0)',
+            [collegeId, name, password, course || null, batch || null]
+        );
+
+        res.json({ success: true, message: 'Registration successful. Pending admin approval.' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });
@@ -81,7 +115,7 @@ app.get('/api/student/status', async (req, res) => {
             'SELECT breakfast, lunch FROM submissions WHERE userId = ? AND date = ?',
             [userId, date]
         );
-        
+
         if (rows.length > 0) {
             res.json({ breakfast: rows[0].breakfast === 1, lunch: rows[0].lunch === 1 });
         } else {
@@ -96,13 +130,13 @@ app.get('/api/student/status', async (req, res) => {
 app.post('/api/student/submit', async (req, res) => {
     try {
         const { userId, date, breakfast, lunch } = req.body;
-        
+
         // Strictly prevent multiple submissions per day per user
         const [existing] = await pool.query(
             'SELECT id FROM submissions WHERE userId = ? AND date = ?',
             [userId, date]
         );
-        
+
         if (existing.length > 0) {
             return res.status(400).json({ error: 'You have already submitted your selection for today.' });
         }
@@ -111,7 +145,7 @@ app.post('/api/student/submit', async (req, res) => {
             'INSERT INTO submissions (userId, date, breakfast, lunch) VALUES (?, ?, ?, ?)',
             [userId, date, breakfast, lunch]
         );
-        
+
         res.json({ success: true, message: 'Submitted successfully' });
     } catch (err) {
         console.error(err);
@@ -142,10 +176,10 @@ app.get('/api/admin/settings', async (req, res) => {
         if (rows.length > 0) {
             const s = rows[0];
             const cutoff = s.cutoff_time ? String(s.cutoff_time).slice(0, 5) : '23:59';
-            
+
             // Only manual holiday from DB, weekend holiday handled by target date
             const holiday = (s.is_holiday === 1);
-            
+
             res.json({ startTime: s.startTime || '09:00', cutoff, holiday });
         } else {
             res.json({ startTime: '09:00', cutoff: '23:59', holiday: false });
@@ -184,7 +218,7 @@ app.get('/api/admin/stats', async (req, res) => {
             'SELECT SUM(breakfast) as bf, SUM(lunch) as lu FROM submissions WHERE date = ?',
             [date]
         );
-        
+
         const breakfast = subRows[0].bf || 0;
         const lunch = subRows[0].lu || 0;
 
@@ -196,9 +230,9 @@ app.get('/api/admin/stats', async (req, res) => {
         const guestBf = guestRows.length > 0 ? guestRows[0].breakfast : 0;
         const guestLu = guestRows.length > 0 ? guestRows[0].lunch : 0;
 
-        res.json({ 
-            totalStudents, 
-            breakfast: parseInt(breakfast), 
+        res.json({
+            totalStudents,
+            breakfast: parseInt(breakfast),
             lunch: parseInt(lunch),
             guests: { breakfast: guestBf, lunch: guestLu }
         });
@@ -210,7 +244,7 @@ app.get('/api/admin/stats', async (req, res) => {
 
 app.get('/api/admin/students', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT id, collegeId, name, course, batch FROM users WHERE role = "student"');
+        const [rows] = await pool.query('SELECT id, collegeId, name, course, batch FROM users WHERE role = "student" AND is_approved = 1');
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -221,7 +255,7 @@ app.get('/api/admin/students', async (req, res) => {
 app.post('/api/admin/students', async (req, res) => {
     try {
         const { collegeId, name, password, course, batch } = req.body;
-        
+
         // check if exists
         const [existing] = await pool.query('SELECT id FROM users WHERE collegeId = ?', [collegeId]);
         if (existing.length > 0) {
@@ -229,10 +263,10 @@ app.post('/api/admin/students', async (req, res) => {
         }
 
         await pool.query(
-            'INSERT INTO users (collegeId, name, password, role, course, batch) VALUES (?, ?, ?, "student", ?, ?)',
+            'INSERT INTO users (collegeId, name, password, role, course, batch, is_approved) VALUES (?, ?, ?, "student", ?, ?, 1)',
             [collegeId, name, password, course || null, batch || null]
         );
-        
+
         res.json({ success: true });
     } catch (err) {
         console.error(err);
@@ -245,7 +279,7 @@ app.post('/api/admin/students/bulk', async (req, res) => {
     try {
         const { students } = req.body;
         console.log(`Bulk Add Request: Received ${students ? students.length : 0} students`);
-        
+
         if (!students || !Array.isArray(students)) {
             return res.status(400).json({ error: 'Invalid students data' });
         }
@@ -254,7 +288,7 @@ app.post('/api/admin/students/bulk', async (req, res) => {
 
         for (const student of students) {
             const { collegeId, name, password, course, batch } = student;
-            
+
             // Check if exists
             const [existing] = await connection.query('SELECT id FROM users WHERE collegeId = ?', [collegeId]);
             if (existing.length > 0) {
@@ -262,7 +296,7 @@ app.post('/api/admin/students/bulk', async (req, res) => {
             }
 
             await connection.query(
-                'INSERT INTO users (collegeId, name, password, role, course, batch) VALUES (?, ?, ?, "student", ?, ?)',
+                'INSERT INTO users (collegeId, name, password, role, course, batch, is_approved) VALUES (?, ?, ?, "student", ?, ?, 1)',
                 [collegeId, name, password, course || null, batch || null]
             );
         }
@@ -283,6 +317,38 @@ app.delete('/api/admin/students/:collegeId', async (req, res) => {
     try {
         const { collegeId } = req.params;
         await pool.query('DELETE FROM users WHERE collegeId = ? AND role = "student"', [collegeId]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/admin/pending', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT id, collegeId, name, course, batch FROM users WHERE role = "student" AND is_approved = 0');
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/admin/approve/:collegeId', async (req, res) => {
+    try {
+        const { collegeId } = req.params;
+        await pool.query('UPDATE users SET is_approved = 1 WHERE collegeId = ? AND role = "student"', [collegeId]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/admin/reject/:collegeId', async (req, res) => {
+    try {
+        const { collegeId } = req.params;
+        await pool.query('DELETE FROM users WHERE collegeId = ? AND role = "student" AND is_approved = 0', [collegeId]);
         res.json({ success: true });
     } catch (err) {
         console.error(err);
@@ -400,7 +466,7 @@ app.get('/api/mess/report', async (req, res) => {
              WHERE s.date = ?`,
             [date]
         );
-        
+
         res.json(rows.map(r => ({
             userId: r.userId,
             userName: r.userName,
@@ -421,5 +487,92 @@ if (require.main === module) {
         console.log(`Server running on port ${port}`);
     });
 }
+
+// --------------------------------------------------------------------------
+// PUSH NOTIFICATION API
+// --------------------------------------------------------------------------
+app.get('/api/push/vapid-key', (req, res) => {
+    res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+app.post('/api/push/subscribe', async (req, res) => {
+    try {
+        const { userId, subscription } = req.body;
+        if (!subscription || !subscription.endpoint) {
+            return res.status(400).json({ error: 'Invalid subscription' });
+        }
+        const { endpoint, keys } = subscription;
+        const { p256dh, auth } = keys;
+        await pool.query(
+            `INSERT INTO push_subscriptions (userId, endpoint, p256dh, auth)
+             VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE p256dh=VALUES(p256dh), auth=VALUES(auth), userId=VALUES(userId)`,
+            [userId, endpoint, p256dh, auth]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Subscribe error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// --------------------------------------------------------------------------
+// CUTOFF REMINDER SCHEDULER (checks every minute)
+// --------------------------------------------------------------------------
+let lastNotifDate = null;
+
+setInterval(async () => {
+    try {
+        const [settingRows] = await pool.query('SELECT cutoff_time FROM settings WHERE id = 1');
+        if (!settingRows.length) return;
+
+        const cutoff = settingRows[0].cutoff_time; // e.g. "23:00:00"
+        const [ch, cm] = cutoff.split(':').map(Number);
+
+        const now = new Date();
+        const nowH = now.getHours();
+        const nowM = now.getMinutes();
+        const todayStr = now.toISOString().split('T')[0];
+
+        // Target = cutoff minus 30 minutes
+        let targetH = ch;
+        let targetM = cm - 30;
+        if (targetM < 0) {
+            targetH -= 1;
+            targetM += 60;
+        }
+        if (targetH < 0) return; // cutoff before 12:30am — skip
+
+        const isTime = (nowH === targetH && nowM === targetM);
+        const alreadySent = (lastNotifDate === todayStr + '_' + targetH + ':' + targetM);
+
+        if (isTime && !alreadySent) {
+            lastNotifDate = todayStr + '_' + targetH + ':' + targetM;
+            console.log('Sending cutoff reminder push notifications...');
+
+            const [subs] = await pool.query('SELECT endpoint, p256dh, auth FROM push_subscriptions');
+            const payload = JSON.stringify({
+                title: '⏰ Mess Submission Closing Soon!',
+                body: `Cutoff time is at ${String(ch).padStart(2, '0')}:${String(cm).padStart(2, '0')}. Submit your meal choice now!`,
+                url: '/'
+            });
+
+            const results = await Promise.allSettled(
+                subs.map(sub =>
+                    webpush.sendNotification(
+                        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+                        payload
+                    )
+                )
+            );
+
+            const sent = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+            console.log(`Push sent: ${sent} success, ${failed} failed`);
+        }
+    } catch (err) {
+        console.error('Scheduler error:', err.message);
+    }
+}, 60 * 1000); // every 60 seconds
 
 module.exports = app;
